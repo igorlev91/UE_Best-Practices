@@ -80,3 +80,19 @@ You can access elements using [x] where x is the element number.
 
 // Sort descending.
 Scores.Sort([](const int& First, const int& Second) {return First > Second; });
+
+## Engineers
+Unreal Engine 4 extends C++ by using a tool called the Unreal Header tool, along with a reflection system. Read this first:
+* [Reflection System and C++ Coding Standard](https://www.unrealengine.com/en-US/blog/unreal-property-system-reflection)
+
+Follow Epic’s coding standard, which is found here:
+* [Coding Standard | Unreal Engine Documentation](
+https://docs.unrealengine.com/5.1/en-US/epic-cplusplus-coding-standard-for-unreal-engine/)
+Resharper C++, which is a Visual Studio plugin, has Unreal Engine 4 features that help you to follow the standard.
+* [Features - ReSharper C++](https://www.jetbrains.com/resharper-cpp/features/)
+Perforce makes a Visual Studio plugin. This makes it much easier to check out files automatically while you are working, or use Rider's perforce integration.
+* [Download Helix Plugin for Visual Studio (P4VS) | Perforce](https://www.perforce.com/downloads/helix-plugin-visual-studio-p4vs)
+Use braces on separate lines for everything. This allows using breakpoints anywhere.
+Where a class is large, use #pragma region and #pragma endregion to separate out functionality as necessary. For each region be sure to use public/private specifiers in case the region is moved.
+Group UFUNCTIONS first and UPROPERTIES second after the private/public/protected specifiers.
+In the main header file for a class, there should be a minimum of included header files to speed compilation when there are changes. Use ‘class’ to forward define class types that aren’t truly needed in the header file.
