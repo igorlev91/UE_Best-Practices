@@ -8,27 +8,27 @@
 > 1. [Style Guide - Project Organization and Naming](#Style-Guide-Project-Organization-and-Naming)
 > 1. [Derived Data Cache (DDC)](#DDC)
 > 1. [Team Setup (while in office)](#Team-Setup)
->    [Locally](#Locally)
->    [Perforce](#Perforce)   
->   - [Rider](#Rider)
-> [Visual Studio](#Visual-Studio)
-> [Engineers](#Engineers)
-> [Reflection System and C++ Coding Standard](#Reflection-System)
-> [Built In Data Types](#Built-In-Data-Types)
-> [TArray](#TArray)
-> [TSet](#TSet)
-> [TMap](#TMap)
-> [Class Creation](#Class-Creation)
-> [Polymorphic Components](#Polymorphic-Components)
-> [UCLASS](#UCLASS)
-> [HideCategories](#HideCategories)
-> [UFUNCTION](#UFUNCTION)
-> [BlueprintCallable](#BlueprintCallable)
-> [BlueprintPure (Implies BlueprintCallable)](#BlueprintPure)
-> [BlueprintGetter](#BlueprintGetter)
-> [BlueprintImplementableEvent](#BlueprintImplementableEvent)
-> [BlueprintNativeEvent](#BlueprintNativeEvent)
-
+> 1. [Locally](#Locally)
+> 1. [Perforce](#Perforce)   
+> 1. [Rider](#Rider)
+> 1. [Visual Studio](#Visual-Studio)
+> 1. [Engineers](#Engineers)
+> 1. [Reflection System and C++ Coding Standard](#Reflection-System)
+> 1. [Built In Data Types](#Built-In-Data-Types)
+> 1. [TArray](#TArray)
+> 1. [TSet](#TSet)
+> 1. [TMap](#TMap)
+> 1. [Class Creation](#Class-Creation)
+> 1. [Polymorphic Components](#Polymorphic-Components)
+> 1. [UCLASS](#UCLASS)
+> 1. [HideCategories](#HideCategories)
+> 1. [UFUNCTION](#UFUNCTION)
+> 1. [BlueprintCallable](#BlueprintCallable)
+> 1. [BlueprintPure (Implies BlueprintCallable)](#BlueprintPure)
+> 1. [BlueprintGetter](#BlueprintGetter)
+> 1. [BlueprintImplementableEvent](#BlueprintImplementableEvent)
+> 1. [BlueprintNativeEvent](#BlueprintNativeEvent)
+> 2. [Multiplayer](#UE4-Multiplayer)
 -
 <a name="Setup"></a>
 ## Setup
@@ -81,13 +81,28 @@ TArray: Arrays in Unreal Engine
 
 A TArray is an array that is templated so that it can contain most any type, including UOBJECT based types.
 
-Use a TArray when you care about the ordering of objects.
-You can Add/Remove from the array using one function call, where remove will search the array with O(N) to find all elements that are that object and remove it.
-You can sort the array using the sort function, and use a predicate if necessary.
-You can access elements using [x] where x is the element number.
+>Use a TArray when you care about the ordering of objects.
+>You can Add/Remove from the array using one function call, where remove will search the array with O(N) to find all elements that are that object and remove it.
+>You can sort the array using the sort function, and use a predicate if necessary.
+> You can access elements using [x] where x is the element number.
 
+```c++
 // Sort descending.
 Scores.Sort([](const int& First, const int& Second) {return First > Second; });
+```
+
+<a name="TSet"></a>
+## TSet
+* [TSet](https://docs.unrealengine.com/4.27/en-US/ProgrammingAndScripting/ProgrammingWithCPP/UnrealArchitecture/TSet/)
+
+A TSet is a number of homogeneous objects that are referenced by the hash produced by the object itself. By default it only allows ONE of each object.
+
+Use TSet when you don't care about order, and instead care about the speed of finding and removing objects.
+
+* Add/Remove uses a hash lookup and is much faster than TArray.
+* You can create your own hash using GetTypeHash() and HashCombine() if necessary.
+* You can't access objects using [x], you must use an iterator. The point of the TSet is not to care about order.
+* If you want to get an element from the TSet, you have to use an iterator; you could conceivably bail after getting the "first" element, which only means that it happens to be the first in the set. This order can change any time.
 
 <a name="Engineers"></a>
 ## Engineers
