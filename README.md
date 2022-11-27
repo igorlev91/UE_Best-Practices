@@ -24,16 +24,14 @@
 > 1. [Polymorphic Components](#Polymorphic-Components)
 > 1. [UCLASS](#UCLASS)
 > 1. [HideCategories](#HideCategories)
-> 2. [UFUNCTION](#UFUNCTION)
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.1. [BlueprintCallable](#BlueprintCallable)
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.2. [BlueprintPure (Implies BlueprintCallable)](#BlueprintPure)
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.3. [BlueprintGetter](#BlueprintGetter)
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.4. [BlueprintImplementableEvent](#BlueprintImplementableEvent)
-> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.5. [BlueprintNativeEvent](#BlueprintNativeEvent)
-> 2. [Multiplayer](#UE4-Multiplayer)
-> 2. [Optimizing Performance](#Optimizing-Performance)
+> 1. [UFUNCTION](#UFUNCTION)
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1.1. [BlueprintCallable](#BlueprintCallable)
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1.2. [BlueprintPure (Implies BlueprintCallable)](#BlueprintPure)
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1.3. [BlueprintGetter](#BlueprintGetter)
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1.4. [BlueprintImplementableEvent](#BlueprintImplementableEvent)
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1.5. [BlueprintNativeEvent](#BlueprintNativeEvent)
 > 1. [Getting Values from the Class Default Object](#CDO)
-> 1 [Components](#Components)
+> 1. [Components](#Components)
 
 -
 <a name="Setup"></a>
@@ -78,16 +76,16 @@ Set up a machine on the network so that it has shared folders with everyone read
 * Working from home, I suggest using the following environment variables, which specifies the location of the local DDC and has no shared DDC for all projects. You can leave out the local DDC one if you are fine with where it’s currently located.
 
 <a name="Perforce"></a>
+## Perforce
 * [Perforce](https://docs.google.com/document/d/1Ah6Wh0H8vvq5yTQ-nAmgOg6wPp8nxzqgX-aZLr7kfnk/edit)
 
 <a name="Rider"></a>
 ## Rider
 There is a new IDE that can be used to work in Unreal Engine, Rider!
 
-Rider for Unreal Engine
+* [Rider for Unreal Engine](https://www.jetbrains.com/lp/rider-unreal/)
 
 It has built-in Perforce support, and already has the ReSharper C++ functionality. In my experience it is much faster than Visual Studio and has many Unreal Engine features. Highly recommended and you can get a free trial!
-
 
 <a name="Visual-Studio"></a>
 ## Visual Studio
@@ -102,7 +100,6 @@ Using the Perforce plugin for Visual Studio makes it much faster to check out fi
 Resharper C++ is a plugin for Visual Studio which has Unreal Engine 4 functionality built into it. It makes it much easier to follow Epic’s coding standard, as it highlights many things that do not fit it. Additionally it speeds creating function prototypes, describes macros (UFUNCTION, UPROPERTY), and replaces intellisense.
 
 * [ReSharper C++ : The Visual Studio Extension for C++ Development](https://www.jetbrains.com/resharper-cpp/)
-
 
 ## Built In Data Types
 
@@ -198,12 +195,12 @@ SetActorTickEnabled()
 SetComponentTickEnabled()
 ```
 * Components and variables created in the C++ base class:
-ALWAYS create components in C++. 
-ALWAYS SetupAttachment() to connect them in the constructor the way you desire to other components, assuming they are based on a scene component (ActorComponents have no transform and cannot be attached of course). If you want to connect them to a socket in a skeletal mesh, setup attachment allows that as well if you put the name of the socket in the call. Note that this won’t happen until the object is registered (the socketing), so you can’t set relative location or rotation to that socket until BeginPlay() on the socketed object.
-If you don't want the object to be attached to anything else during gameplay, it is still a good idea to attach it in the constructor and detach it in BeginPlay() or at some other time. Alternatively you can set it to use absolute location, rotation, and scale.
-If you don't attach it to a parent object, you will get weird results occasionally (it will auto attach it to the root for you, etc), so it's best to create predictable behavior by attaching it and detaching it specifically.
-Should be protected, components should not be publicly accessible unless there’s some real reason; consider using friend classes.
-Give absolutely minimum access necessary to variables and functions from BP to make it clear how they are used. Don’t just make everything BlueprintReadWrite, it will be hard to know what’s being used in BPs if you want to refactor. See the UFUNCTION and UPROPERTY specifiers section.
+* ALWAYS create components in C++. 
+* ALWAYS SetupAttachment() to connect them in the constructor the way you desire to other components, assuming they are based on a scene component (ActorComponents have no transform and cannot be attached of course). If you want to connect them to a socket in a skeletal mesh, setup attachment allows that as well if you put the name of the socket in the call. Note that this won’t happen until the object is registered (the socketing), so you can’t set relative location or rotation to that socket until BeginPlay() on the socketed object.
+* If you don't want the object to be attached to anything else during gameplay, it is still a good idea to attach it in the constructor and detach it in BeginPlay() or at some other time. Alternatively you can set it to use absolute location, rotation, and scale.
+* If you don't attach it to a parent object, you will get weird results occasionally (it will auto attach it to the root for you, etc), so it's best to create predictable behavior by attaching it and detaching it specifically.
+* Should be protected, components should not be publicly accessible unless there’s some real reason; consider using friend classes.
+* Give absolutely minimum access necessary to variables and functions from BP to make it clear how they are used. Don’t just make everything BlueprintReadWrite, it will be hard to know what’s being used in BPs if you want to refactor. See the UFUNCTION and UPROPERTY specifiers section.
 For components, use:
 ```c++
 UPROPERTY(VisibleAnywhere)
@@ -403,7 +400,8 @@ static void HandleTargets(UPARAM(ref) TArray<FVector>& InputLocations, TArray<FV
 
 CallInEditor
 Allows the function to be called in the editor when selecting the object in the level. This can be done while running the game or not. Very useful for testing functionality; a button appears that is the name of the function in the actor’s details pane.
-Exec
+
+## Exec
 Allows executing the function from the console.
 
 <a name="CDO"></a>
@@ -425,10 +423,10 @@ for(const TSubclassOf<UDeathChuteGameplayAbility>& Ability : DefaultAbilities)
 ```
 
 ## Components
-Editor Only Components
+* Editor Only Components
 Components which have transforms in the world (objects based on the scene component, for example an arrow) require their transforms to be updated every frame while moving.
-This cost can be removed by making the component editor only and caching it's transform for use outside the editor. For example, if an arrow in the editor represents a fixed relative transform related to a base component, you can cache that relative transform and convert that relative transform to world transform when using it.
-To make a component editor only, wrap the component definition #if WITH_EDITORONLY_DATA in the header file.
+* This cost can be removed by making the component editor only and caching it's transform for use outside the editor. For example, if an arrow in the editor represents a fixed relative transform related to a base component, you can cache that relative transform and convert that relative transform to world transform when using it.
+* To make a component editor only, wrap the component definition #if WITH_EDITORONLY_DATA in the header file.
 
 
 ```c++
