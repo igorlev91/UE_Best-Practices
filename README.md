@@ -38,7 +38,7 @@ It is imperative to set up the project properly and have everyone agree to use a
 * [- GitHub - Allar/ue5-style-guide: An attempt to make Unreal Engine 4 projects more consistent](https://github.com/hollsteinm/ReasonablePlanningAI)
 
 <a name="DDC"></a>
-## DDC
+## Derived Data Cache
 This cache allows sharing of the cost to compile shaders and other operations. It’s a must when working in a team to prevent hours of waiting when working locally. It doesn’t make sense to use when working remotely because it would take longer to download than to generate, however you can specify the location of a local and shared DDC to prevent the warning messages from popping up.
 
 Here’s Epic’s documentation:
@@ -76,8 +76,7 @@ Working from home, I suggest using the following environment variables, which sp
 <a name="TArray"></a>
 ## TArray
 
-* [TArray](https://docs.unrealengine.com/4.27/en-US/ProgrammingAndScripting/ProgrammingWithCPP/UnrealArchitecture/TArrays/)
-TArray: Arrays in Unreal Engine
+* [TArray: Arrays in Unreal Engine](https://docs.unrealengine.com/4.27/en-US/ProgrammingAndScripting/ProgrammingWithCPP/UnrealArchitecture/TArrays/)
 
 A TArray is an array that is templated so that it can contain most any type, including UOBJECT based types.
 
@@ -93,7 +92,7 @@ Scores.Sort([](const int& First, const int& Second) {return First > Second; });
 
 <a name="TSet"></a>
 ## TSet
-* [TSet](https://docs.unrealengine.com/4.27/en-US/ProgrammingAndScripting/ProgrammingWithCPP/UnrealArchitecture/TSet/)
+* [TSet | Unreal Engine 4.27 Documentation](https://docs.unrealengine.com/4.27/en-US/ProgrammingAndScripting/ProgrammingWithCPP/UnrealArchitecture/TSet/)
 
 A TSet is a number of homogeneous objects that are referenced by the hash produced by the object itself. By default it only allows ONE of each object.
 
@@ -128,20 +127,21 @@ Resharper C++, which is a Visual Studio plugin, has Unreal Engine 4 features tha
 * [Features - ReSharper C++](https://www.jetbrains.com/resharper-cpp/features/)
 Perforce makes a Visual Studio plugin. This makes it much easier to check out files automatically while you are working, or use Rider's perforce integration.
 * [Download Helix Plugin for Visual Studio (P4VS) | Perforce](https://www.perforce.com/downloads/helix-plugin-visual-studio-p4vs)
-Use braces on separate lines for everything. This allows using breakpoints anywhere.
-Where a class is large, use #pragma region and #pragma endregion to separate out functionality as necessary. For each region be sure to use public/private specifiers in case the region is moved.
-Group UFUNCTIONS first and UPROPERTIES second after the private/public/protected specifiers.
-In the main header file for a class, there should be a minimum of included header files to speed compilation when there are changes. Use ‘class’ to forward define class types that aren’t truly needed in the header file.
+* Use braces on separate lines for everything. This allows using breakpoints anywhere.
+* Where a class is large, use #pragma region and #pragma endregion to separate out functionality as necessary. For each region be sure to use public/private specifiers in case the region is moved.
+* Group UFUNCTIONS first and UPROPERTIES second after the private/public/protected specifiers.
+* In the main header file for a class, there should be a minimum of included header files to speed compilation when there are changes. Use ‘class’ to forward define class types that aren’t truly needed in the header file.
 
 <a name="Class-Creation"></a>
+## Class Creation
 
-ALWAYS CREATE A BASE CLASS IN C++.
+* ALWAYS CREATE A BASE CLASS IN C++.
 
-Mark the class as final if it does not have any classes which inherit from it, this will speed up function calls of virtual functions, as the class can be "de-virtualized". final specifier (since C++11)
+* Mark the class as final if it does not have any classes which inherit from it, this will speed up function calls of virtual functions, as the class can be "de-virtualized". final specifier (since C++11)
 
-Constructors can contain NO RUNTIME CODE and should only be used for constructing components and setting default values in the class. Do NOT assign dynamic delegates in the constructor, these are unpredictable.
+* Constructors can contain NO RUNTIME CODE and should only be used for constructing components and setting default values in the class. Do NOT assign dynamic delegates in the constructor, these are unpredictable.
 
-Disable tick and start with tick enable in the constructor of the class UNLESS YOU ABSOLUTELY HAVE TO USE TICK. Setting start with tick enabled to false will cause the BP to have “Start with Tick Enabled” off by default, which is a great way to prevent having a ton of BP’s ticking that aren’t doing anything.
+* Disable tick and start with tick enable in the constructor of the class UNLESS YOU ABSOLUTELY HAVE TO USE TICK. Setting start with tick enabled to false will cause the BP to have “Start with Tick Enabled” off by default, which is a great way to prevent having a ton of BP’s ticking that aren’t doing anything.
 For actors:
 PrimaryActorTick.bCanEverTick = false;
 PrimaryActorTick.bStartWithTickEnabled = false;
@@ -180,4 +180,59 @@ Variables that point to UOBJECTS such as an actor reference, should use UPROPERT
 UPROPERTY(Transient)
 UMaterialInstanceDynamic* DynamicMaterial;
 
-Don’t spawn components conditionally or delete components in the constructor if you want the editor to visualize them properly. UE4 runs the constructor once to create a class default object and doesn’t run the constructor on actors that have been saved into levels once it has done this. Objects that are selected in the editor, if you have deleted components, will flicker in their description pane.
+* Don’t spawn components conditionally or delete components in the constructor if you want the editor to visualize them properly. UE4 runs the constructor once to create a class default object and doesn’t run the constructor on actors that have been saved into levels once it has done this. Objects that are selected in the editor, if you have deleted components, will flicker in their description pane.
+
+<a name="#Polymorphic-Components"></a>
+## Polymorphic Components
+
+If you want to create a component in a base class, and then have child classes override that class, it can be done using the object initializer.
+
+* Create your new base class.
+* Change the constructor that was automatically generated to include a FOBjectInitializer argument in the header and C++ file.
+
+```c++
+AMeleeWeaponActor(const class FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+```
+
+Use that constructor to create the base version of the component.
+
+```c++
+AMeleeWeaponActor::AMeleeWeaponActor(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+
+	AttackColliderComponent = CreateDefaultSubobject<UShapeComponent>(TEXT("AttackCollider"));
+}
+
+```
+
+Now create your subclass of the actor:
+
+```c++
+AMeleeWeaponActor::AMeleeWeaponActor(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+
+	AttackColliderComponent = CreateDefaultSubobject<UShapeComponent>(TEXT("AttackCollider"));
+}
+
+```
+
+
+In the constructor of this child actor, use the initializer to specify the class for the component.
+```c++
+AShovelActor::AShovelActor(const FObjectInitializer& ObjectInitializer) :
+	Super(ObjectInitializer.SetDefaultSubobjectClass<UBoxComponent>(TEXT("AttackCollider")))
+{
+	UBoxComponent* Box = CastChecked<UBoxComponent>(AttackColliderComponent);
+
+	Box->SetupAttachment(GetRootComponent());
+	Box->SetCollisionProfileName(Weapon_ProfileName);
+	Box->SetGenerateOverlapEvents(false);
+	Box->CanCharacterStepUpOn = ECB_No;
+}
+
+```
+
+* At this point, the original class will have the shape component, and since a collision box is a subclass of shape, the new class will have a box component. This way you can make multiple subclasses, and each could have a different collision shape (box, capsule, sphere) if you desired.
+Good places to look at this in the engine code is ACharacter and ATriggerBase if you want to see examples.
