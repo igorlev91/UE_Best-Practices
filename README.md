@@ -8,7 +8,7 @@
 > 1. [Style Guide - Project Organization and Naming](#Style-Guide-Project-Organization-and-Naming)
 > 1. [Derived Data Cache (DDC)](#DDC)
 > 1. [Team Setup (while in office)](#Team-Setup)
-> 1. [Locally](#Locally)
+> 1. [Locally](#Locally (remote work))
 > 1. [Perforce](#Perforce)   
 > 1. [Rider](#Rider)
 > 1. [Visual Studio](#Visual-Studio)
@@ -22,13 +22,15 @@
 > 1. [Polymorphic Components](#Polymorphic-Components)
 > 1. [UCLASS](#UCLASS)
 > 1. [HideCategories](#HideCategories)
-> 1. [UFUNCTION](#UFUNCTION)
-> 1. [BlueprintCallable](#BlueprintCallable)
-> 1. [BlueprintPure (Implies BlueprintCallable)](#BlueprintPure)
-> 1. [BlueprintGetter](#BlueprintGetter)
-> 1. [BlueprintImplementableEvent](#BlueprintImplementableEvent)
-> 1. [BlueprintNativeEvent](#BlueprintNativeEvent)
+> 2. [UFUNCTION](#UFUNCTION)
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.1. [BlueprintCallable](#BlueprintCallable)
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.2. [BlueprintPure (Implies BlueprintCallable)](#BlueprintPure)
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.3. [BlueprintGetter](#BlueprintGetter)
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.4. [BlueprintImplementableEvent](#BlueprintImplementableEvent)
+> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.5. [BlueprintNativeEvent](#BlueprintNativeEvent)
 > 2. [Multiplayer](#UE4-Multiplayer)
+> 2. [Optimizing Performance](#Optimizing-Performance)
+
 -
 <a name="Setup"></a>
 ## Setup
@@ -65,13 +67,37 @@ EnginePak=(Type=ReadPak, Filename=%ENGINEDIR%DerivedDataCache/DDC.ddp)
 
 Set up a machine on the network so that it has shared folders with everyone read/write access, and set the path in the DefaultEngine.ini as shown.
 
-<a name="Locally"></a>
+<a name="Locally (remote work)"></a>
 ## Locally (remote work)
-When working remotely, it doesn’t make sense to try and use a shared DDC, because downloading it through the VPN would be slower than generating it yourself locally. We will disable the shader DDC to prevent duplicating data in the following steps.
-By default, the engine will set up a local DDC in Users\username\AppData\Local\UnrealEngine\Common. I prefer having it somewhere easy to find (and delete), but you can leave it there if you don’t mind that location.
-Working from home, I suggest using the following environment variables, which specifies the location of the local DDC and has no shared DDC for all projects. You can leave out the local DDC one if you are fine with where it’s currently located.
+* When working remotely, it doesn’t make sense to try and use a shared DDC, because downloading it through the VPN would be slower than generating it yourself locally. We will disable the shader DDC to prevent duplicating data in the following steps.
+* By default, the engine will set up a local DDC in Users\username\AppData\Local\UnrealEngine\Common. I prefer having it somewhere easy to find (and delete), but you can leave it there if you don’t mind that location.
+* Working from home, I suggest using the following environment variables, which specifies the location of the local DDC and has no shared DDC for all projects. You can leave out the local DDC one if you are fine with where it’s currently located.
 
-##Built In Data Types
+<a name="Rider"></a>
+## Rider
+There is a new IDE that can be used to work in Unreal Engine, Rider!
+
+Rider for Unreal Engine
+
+It has built-in Perforce support, and already has the ReSharper C++ functionality. In my experience it is much faster than Visual Studio and has many Unreal Engine features. Highly recommended and you can get a free trial!
+
+
+<a name="Visual-Studio"></a>
+## Visual Studio
+If you use Visual Studio, changing a few settings is imperative:
+
+* [Setting Up Visual Studio for Unreal Engine](https://docs.unrealengine.com/5.1/en-US/setting-up-visual-studio-development-environment-for-cplusplus-projects-in-unreal-engine/)
+
+Using the Perforce plugin for Visual Studio makes it much faster to check out files:
+
+* [Download Helix Plugin for Visual Studio (P4VS)](https://www.perforce.com/downloads/helix-plugin-visual-studio-p4vs)
+
+Resharper C++ is a plugin for Visual Studio which has Unreal Engine 4 functionality built into it. It makes it much easier to follow Epic’s coding standard, as it highlights many things that do not fit it. Additionally it speeds creating function prototypes, describes macros (UFUNCTION, UPROPERTY), and replaces intellisense.
+
+* [ReSharper C++ : The Visual Studio Extension for C++ Development](https://www.jetbrains.com/resharper-cpp/)
+
+
+## Built In Data Types
 
 <a name="TArray"></a>
 ## TArray
@@ -236,3 +262,111 @@ AShovelActor::AShovelActor(const FObjectInitializer& ObjectInitializer) :
 
 * At this point, the original class will have the shape component, and since a collision box is a subclass of shape, the new class will have a box component. This way you can make multiple subclasses, and each could have a different collision shape (box, capsule, sphere) if you desired.
 Good places to look at this in the engine code is ACharacter and ATriggerBase if you want to see examples.
+
+<a name="UFUNCTION"></a>
+## UFUNCTION
+## BlueprintCallable
+Allows a function to be called from BP in general. If the function is setting/getting a variable or doesn’t change the underlying class, use the more specific specifiers below.
+```c++
+UFUNCTION(BlueprintCallable)
+void TriggerSomething();
+```
+<a name="BlueprintPure"></a>
+## BlueprintPure (Implies BlueprintCallable)
+Allows a function to be called from BP that doesn’t change the underlying class. If the function is just setting a variable in the underlying class, use BlueprintSetter.
+```c++
+UFUNCTION(BlueprintPure, Category = "Point Cloud")
+TArray<FVector> GetPointsInBox(const FBox& WorldSpaceBox) const;
+BlueprintGetter (Implies BlueprintPure and BlueprintCallable) and BlueprintSetter (Implies BlueprintCallable)
+Example UPROPERTY:
+
+UPROPERTY(EditAnywhere, BlueprintGetter=GetDisablePostProcessBlueprint, BlueprintSetter=SetDisablePostProcessBlueprint, Category = Animation)
+uint8 bDisablePostProcessBlueprint:1;
+```
+
+BlueprintGetter is intended for getting a variable from the underlying class:
+```c++
+UFUNCTION(BlueprintGetter)
+bool GetDisablePostProcessBlueprint() const { return bDisablePostProcessBlueprint; }
+```
+
+BlueprintSetter is intended for setting a variable in the underlying class:
+
+
+```c++
+
+UFUNCTION(BlueprintSetter)
+void SetDisablePostProcessBlueprint(bool bInDisablePostProcess)
+{
+	if(!bInDisablePostProcess && bDisablePostProcessBlueprint && PostProcessAnimInstance)
+	{
+		PostProcessAnimInstance->InitializeAnimation();
+	}
+
+	bDisablePostProcessBlueprint = bInDisablePostProcess;
+}
+```
+<a name="BlueprintImplementableEvent"></a>
+
+Defines a function that is overridden in BP, and has no native implementation. See BlueprintNativeEvent to add a native implementation.
+
+```c++
+
+UFUNCTION(BlueprintImplementableEvent)
+void PlayerIsHealthy(float Health);
+```
+
+In your class Blueprint, right click and type the name of your function to create an event that is the function override.
+<a name="BlueprintNativeEvent"></a>
+## BlueprintNativeEvent
+Define a function that is intended to be overridden in BP, but also has a native implementation specified with the _Implementation label.
+
+```c++
+UFUNCTION(BlueprintNativeEvent)
+UEnum* GetAnimationStateEnum();
+virtual UEnum* GetAnimationStateEnum_Implementation()
+{
+	return GetAnimationStateEnum_Internal();
+}
+```
+Passing Structs
+In order for these to compile and to show up in Blueprints properly, you must pass the structure as a const reference, as seen below.
+
+
+```c++
+// Calls the SetHandPose() function on the animation blueprint.
+UFUNCTION(BlueprintNativeEvent)
+void SetHandPose(const FPoseSet& Poses, bool bImmediate);
+void SetHandPose_Implementation(const FPoseSet& Poses, bool bImmediate);
+
+USTRUCT(BlueprintType)
+struct FPoseSet
+{
+  GENERATED_BODY()
+
+  UPROPERTY(EditAnywhere, BlueprintReadWrite)
+  UAnimSequence* FemaleLeftPose;
+
+  UPROPERTY(EditAnywhere, BlueprintReadWrite)
+  UAnimSequence* FemaleRightPose;
+
+  UPROPERTY(EditAnywhere, BlueprintReadWrite)
+  UAnimSequence* MaleLeftPose;
+
+  UPROPERTY(EditAnywhere, BlueprintReadWrite)
+  UAnimSequence* MaleRightPose;
+};
+```
+
+Structs as Function Inputs
+Use UPARAM(ref):
+
+```c++
+UFUNCTION(BlueprintCallable, Category = "Example Nodes")
+static void HandleTargets(UPARAM(ref) TArray<FVector>& InputLocations, TArray<FVector>& OutputLocations);
+```
+
+CallInEditor
+Allows the function to be called in the editor when selecting the object in the level. This can be done while running the game or not. Very useful for testing functionality; a button appears that is the name of the function in the actor’s details pane.
+Exec
+Allows executing the function from the console.
