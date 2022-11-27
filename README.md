@@ -66,25 +66,25 @@ EnginePak=(Type=ReadPak, Filename=%ENGINEDIR%DerivedDataCache/DDC.ddp)
 Set up a machine on the network so that it has shared folders with everyone read/write access, and set the path in the DefaultEngine.ini as shown.
 
 <a name="Locally"></a>
-##Locally (remote work)
+## Locally (remote work)
 When working remotely, it doesn’t make sense to try and use a shared DDC, because downloading it through the VPN would be slower than generating it yourself locally. We will disable the shader DDC to prevent duplicating data in the following steps.
 By default, the engine will set up a local DDC in Users\username\AppData\Local\UnrealEngine\Common. I prefer having it somewhere easy to find (and delete), but you can leave it there if you don’t mind that location.
 Working from home, I suggest using the following environment variables, which specifies the location of the local DDC and has no shared DDC for all projects. You can leave out the local DDC one if you are fine with where it’s currently located.
 
-Built In Data Types
+##Built In Data Types
 
 <a name="TArray"></a>
-##TArray
+## TArray
 
 * [TArray](https://docs.unrealengine.com/4.27/en-US/ProgrammingAndScripting/ProgrammingWithCPP/UnrealArchitecture/TArrays/)
 TArray: Arrays in Unreal Engine
 
 A TArray is an array that is templated so that it can contain most any type, including UOBJECT based types.
 
->Use a TArray when you care about the ordering of objects.
->You can Add/Remove from the array using one function call, where remove will search the array with O(N) to find all elements that are that object and remove it.
->You can sort the array using the sort function, and use a predicate if necessary.
-> You can access elements using [x] where x is the element number.
+* Use a TArray when you care about the ordering of objects.
+* You can Add/Remove from the array using one function call, where remove will search the array with O(N) to find all elements that are that object and remove it.
+* You can sort the array using the sort function, and use a predicate if necessary.
+*  You can access elements using [x] where x is the element number.
 
 ```c++
 // Sort descending.
@@ -103,6 +103,18 @@ Use TSet when you don't care about order, and instead care about the speed of fi
 * You can create your own hash using GetTypeHash() and HashCombine() if necessary.
 * You can't access objects using [x], you must use an iterator. The point of the TSet is not to care about order.
 * If you want to get an element from the TSet, you have to use an iterator; you could conceivably bail after getting the "first" element, which only means that it happens to be the first in the set. This order can change any time.
+
+
+<a name="TMap"></a>
+## TMap
+* [TMap | Unreal Engine 4.27 Documentation](https://docs.unrealengine.com/4.27/en-US/ProgrammingAndScripting/ProgrammingWithCPP/UnrealArchitecture/TMap/)
+
+A TMap is similar to a TSet, except that the key value, that is to say the value that you use to look up the object, can be specified.
+
+* Use TMap when you don't care about order, care about speed in look up, and need to map some kind of key to a value.
+* For example, you might want to map FName to UDataAsset, looking up data assets by their name.
+* You could also map a uint32 Hash to an object in a map, and generate the hash manually by what is in the object that uniquely identifies it.
+
 
 <a name="Engineers"></a>
 ## Engineers
