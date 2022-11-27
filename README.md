@@ -1,6 +1,8 @@
 # UE_Best-Practices
  I wrote down some Unreal Engine best practices I've found in the past few years working in it professionally.
 
+Структурирование информации — очень полезный навык. Я постарался копнуть в каждый вопрос чуть глубже чем, возможно, надо бы -- чтобы было некоторое понимание "а почему именно так устроена та или иная штука". Более того, крайне рекомендую ознакомиться и с ссылками на источники, что будут под ответами — там вы найдете более развернутые ответы.
+
 <a name="table-of-contents"></a>
 ## Table of Contents
 
@@ -30,6 +32,8 @@
 > &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2.5. [BlueprintNativeEvent](#BlueprintNativeEvent)
 > 2. [Multiplayer](#UE4-Multiplayer)
 > 2. [Optimizing Performance](#Optimizing-Performance)
+> 1. [Getting Values from the Class Default Object](#CDO)
+> 1 [Components](#Components)
 
 -
 <a name="Setup"></a>
@@ -72,6 +76,9 @@ Set up a machine on the network so that it has shared folders with everyone read
 * When working remotely, it doesn’t make sense to try and use a shared DDC, because downloading it through the VPN would be slower than generating it yourself locally. We will disable the shader DDC to prevent duplicating data in the following steps.
 * By default, the engine will set up a local DDC in Users\username\AppData\Local\UnrealEngine\Common. I prefer having it somewhere easy to find (and delete), but you can leave it there if you don’t mind that location.
 * Working from home, I suggest using the following environment variables, which specifies the location of the local DDC and has no shared DDC for all projects. You can leave out the local DDC one if you are fine with where it’s currently located.
+
+<a name="Perforce"></a>
+* [Perforce](https://docs.google.com/document/d/1Ah6Wh0H8vvq5yTQ-nAmgOg6wPp8nxzqgX-aZLr7kfnk/edit)
 
 <a name="Rider"></a>
 ## Rider
@@ -163,25 +170,34 @@ Perforce makes a Visual Studio plugin. This makes it much easier to check out fi
 
 * ALWAYS CREATE A BASE CLASS IN C++.
 
-* Mark the class as final if it does not have any classes which inherit from it, this will speed up function calls of virtual functions, as the class can be "de-virtualized". final specifier (since C++11)
+* Mark the class as final if it does not have any classes which inherit from it, this will speed up function calls of virtual functions, as the class can be "de-virtualized". [final specifier (since C++11) ](
+https://en.cppreference.com/w/cpp/language/final)
 
 * Constructors can contain NO RUNTIME CODE and should only be used for constructing components and setting default values in the class. Do NOT assign dynamic delegates in the constructor, these are unpredictable.
 
 * Disable tick and start with tick enable in the constructor of the class UNLESS YOU ABSOLUTELY HAVE TO USE TICK. Setting start with tick enabled to false will cause the BP to have “Start with Tick Enabled” off by default, which is a great way to prevent having a ton of BP’s ticking that aren’t doing anything.
 For actors:
+```c++
 PrimaryActorTick.bCanEverTick = false;
 PrimaryActorTick.bStartWithTickEnabled = false;
+```
 For components:
+```c++
 PrimaryComponentTick.bCanEverTick =  false;
 PrimaryComponentTick.bStartWithTickEnabled = false;
-If you have to use tick:
+```
+* If you have to use tick:
 Set the tick interval to the maximum value you can get away with. Unfortunately this is often per frame for smoothly moving things.
+```c++
 PrimaryActorTick.TickInterval = 0.2f;
 PrimaryComponentTick.TickInterval = 0.2f;
-Enable/disable tick to only tick when required.
+```
+* Enable/disable tick to only tick when required.
+```c++
 SetActorTickEnabled()
 SetComponentTickEnabled()
-Components and variables created in the C++ base class:
+```
+* Components and variables created in the C++ base class:
 ALWAYS create components in C++. 
 ALWAYS SetupAttachment() to connect them in the constructor the way you desire to other components, assuming they are based on a scene component (ActorComponents have no transform and cannot be attached of course). If you want to connect them to a socket in a skeletal mesh, setup attachment allows that as well if you put the name of the socket in the call. Note that this won’t happen until the object is registered (the socketing), so you can’t set relative location or rotation to that socket until BeginPlay() on the socketed object.
 If you don't want the object to be attached to anything else during gameplay, it is still a good idea to attach it in the constructor and detach it in BeginPlay() or at some other time. Alternatively you can set it to use absolute location, rotation, and scale.
@@ -189,23 +205,29 @@ If you don't attach it to a parent object, you will get weird results occasional
 Should be protected, components should not be publicly accessible unless there’s some real reason; consider using friend classes.
 Give absolutely minimum access necessary to variables and functions from BP to make it clear how they are used. Don’t just make everything BlueprintReadWrite, it will be hard to know what’s being used in BPs if you want to refactor. See the UFUNCTION and UPROPERTY specifiers section.
 For components, use:
+```c++
 UPROPERTY(VisibleAnywhere)
 	USomeComponent* SomeComponent;
+```
 Pointers to other objects or variables that need to be set will be
+```c++
 UPROPERTY(EditDefaultsOnly)
 float SomeFloat = 0.3f;
 Variables that are set up in the class ALWAYS NEED A DEFAULT VALUE UNLESS TRANSIENT.
 float SomeFloat = 0.0f;
 int SomeInt = 0;
 bool bSomeBool = false;
+```
+
 Keep in mind that variables that are set in an inherited BP will not be accessible in the constructor. They will not be set until BeginPlay(). 
 Variables that point to UOBJECTS such as an actor reference, should use UPROPERTY() to prevent garbage collection. Otherwise, the engine can garbage collect the pointer at any time, invalidating the reference. 
 
 * [Unreal Object Handling | Unreal Engine Documentation](https://docs.unrealengine.com/5.1/en-US/objects-in-unreal-engine/)
 
+```c++
 UPROPERTY(Transient)
 UMaterialInstanceDynamic* DynamicMaterial;
-
+```
 * Don’t spawn components conditionally or delete components in the constructor if you want the editor to visualize them properly. UE4 runs the constructor once to create a class default object and doesn’t run the constructor on actors that have been saved into levels once it has done this. Objects that are selected in the editor, if you have deleted components, will flicker in their description pane.
 
 <a name="#Polymorphic-Components"></a>
@@ -262,6 +284,19 @@ AShovelActor::AShovelActor(const FObjectInitializer& ObjectInitializer) :
 
 * At this point, the original class will have the shape component, and since a collision box is a subclass of shape, the new class will have a box component. This way you can make multiple subclasses, and each could have a different collision shape (box, capsule, sphere) if you desired.
 Good places to look at this in the engine code is ACharacter and ATriggerBase if you want to see examples.
+
+<a name="UCLASS"></a>
+## UCLASS
+[Class Specifiers | Unreal Engine Documentation](
+https://docs.unrealengine.com/5.1/en-US/class-specifiers/)
+
+HideCategories
+```c++
+UCLASS(HideCategories=(Actor, Physics, Collision, Lighting, Rendering, Replication, Input, LOD, Cooking))
+```
+It’s possible to hide categories from the blueprint editor / details pane of a class by specifying the category of the class to hide, or the class name for properties with no category.
+
+
 
 <a name="UFUNCTION"></a>
 ## UFUNCTION
@@ -370,3 +405,52 @@ CallInEditor
 Allows the function to be called in the editor when selecting the object in the level. This can be done while running the game or not. Very useful for testing functionality; a button appears that is the name of the function in the actor’s details pane.
 Exec
 Allows executing the function from the console.
+
+<a name="CDO"></a>
+## Getting Values from the Class Default Object
+If you have a class, that has a Blueprint in which you set the value of a variable:
+
+```c++
+UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Ability")
+EDeathChuteAbilityInputId AbilityInputId = EDeathChuteAbilityInputId::None;
+```
+You can read the value of the default value of the variable set in the BP from the class itself without instantiating it using GetDefaultObject():
+
+```c++
+for(const TSubclassOf<UDeathChuteGameplayAbility>& Ability : DefaultAbilities)
+{
+  AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(Ability, 0.0f,
+     static_cast<int32>(Ability.GetDefaultObject()->AbilityInputId), this));
+}
+```
+
+## Components
+Editor Only Components
+Components which have transforms in the world (objects based on the scene component, for example an arrow) require their transforms to be updated every frame while moving.
+This cost can be removed by making the component editor only and caching it's transform for use outside the editor. For example, if an arrow in the editor represents a fixed relative transform related to a base component, you can cache that relative transform and convert that relative transform to world transform when using it.
+To make a component editor only, wrap the component definition #if WITH_EDITORONLY_DATA in the header file.
+
+
+```c++
+#if WITH_EDITORONLY_DATA
+	UPROPERTY(VisibleAnywhere)
+	UArrowComponent* ArrowComponent;
+#endif
+```
+Wrap where the component is constructed or accessed as well, and use the CreateEditorOnlyDefaultSubobject. Be sure to check if the object exists before referencing it, as in non-editor builds, it will be null.
+
+```c++
+#if WITH_EDITORONLY_DATA
+  ArrowComponent = CreateEditorOnlyDefaultSubobject<UArrowComponent>(TEXT("ArrowComponent"));
+if(ArrowComponent)
+{
+ArrowComponent->SetupAttachment(....
+...
+#endif
+```
+Cache the relative transform of the component; this can be done in many ways, but using PostEditChangeProperty() to set the cache value based on the component value when things are changed in the editor is an easy way to do it.
+Then you can get the world transform of the component by multiplying the cached transform with the transform of the component it was attached to. For example:
+
+```c++
+FTransform WorldTransform = CachedRelativeTransform * GetActorTransform();
+```
